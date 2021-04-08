@@ -1,12 +1,12 @@
 # JavaTranslator_mini
 
-This is a part of a Compiler's class Homework.
+This is a part of a Compiler's class Homework (Spring 2020).
 
-##Tools used
- --JFlex
- --JavaCUP
+## Tools used
+ * JFlex
+ * JavaCUP
 
-##Comments:
+## Comments:
 I have used the ”){” terminals as one terminal named CR (conflict resolver),
 in order to solve the shift/reduce conflict between the non-terminals call args
 and decl args.
