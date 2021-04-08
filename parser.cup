@@ -1,0 +1,95 @@
+/* Simple +/-/* expression language; parser evaluates constant expressions on the fly*/
+/**
+ *  Package and Import Specifications
+ */
+import java_cup.runtime.*;
+
+/**
+ *  Usercode Components
+ */
+parser code {:
+    // Connect this parser to a scanner!
+    Scanner s;
+    Parser(Scanner s){ this.s=s; }
+:}
+
+/* define how to connect to the scanner! */
+scan with {: return s.next_token(); :};
+
+/**
+ *  Symbol Lists
+ */
+
+/* Terminals (tokens returned by the scanner). */
+terminal            PLUS, LPAREN, RPAREN, RCURL, COMMA, IF, ELSE, PREFIX, REVERSE, CR;
+terminal String     IDENTIFIER, STRING_LITERAL;
+
+/*  Non terminals */
+non terminal            Goal;
+non terminal String    fun_decl, fun_call, decl_args, call_args, fun_body, if_else,
+                       if_cond, reverse, prefix, expr, stmt, decl_tail ;      // used to store evaluated subexpressions
+
+/**
+ *  Precedence Declarations
+ */
+precedence left REVERSE;
+precedence left PLUS;
+precedence left IF;
+precedence left COMMA;      //resolves conflicts between arguments
+
+/**
+ *  The Grammar Rules
+ */
+
+Goal ::= fun_decl:fd  fun_call:fc                                                    {:System.out.println("import java.io.*;\n\npublic class Main{\n\n\tpublic static void main(String[] args){"+ fc +"\t}\n\t\n\t" + fd + "\n}");:}
+        ;
+
+fun_decl ::= fun_decl:fd IDENTIFIER:p LPAREN decl_args:d fun_body:fb RCURL           {:RESULT = fd + "public static String " + p + "(" + d + "{\n\t\treturn " + fb + ";\n\t}" + "\n\t";:}
+          |                                                                          {:RESULT = "";:}
+          ;
+
+fun_call ::= IDENTIFIER:p LPAREN call_args:c RPAREN fun_call:fc                      {:RESULT = "\n\t\tSystem.out.println(" + p + "(" + c + ")" +");\n" + fc;:}
+          |                                                                          {:RESULT = "";:}
+          ;
+
+
+decl_tail ::= IDENTIFIER:i COMMA decl_tail:d                                         {:RESULT = "String " + i + "," + d;:}
+          | IDENTIFIER:i CR                                                          {:RESULT = "String " + i + ")";:}
+          ;
+
+decl_args ::= decl_tail:d                                                            {:RESULT = d;:}
+            | CR                                                                     {:RESULT = ")";:}
+            ;
+
+call_args ::= call_args:c COMMA call_args:e                                          {:RESULT = c + "," + e;:}
+            | stmt:e                                                                 {:RESULT = e;:}
+            ;
+
+expr ::= expr:e LPAREN call_args:c RPAREN                                            {:RESULT = e + "(" + c + ")";:}
+        |STRING_LITERAL:s                                                            {:RESULT = "\""+s+"\"";:}
+        |IDENTIFIER:i                                                                {:RESULT = i;:}
+        |                                                                            {:RESULT = "";:}
+        ;
+
+stmt ::= if_else:i                                                                   {:RESULT = i;:}
+        |  stmt:c PLUS stmt:e                                                        {:RESULT = c + "+" + e;:} /*concatenate*/
+        |  reverse:r                                                                 {:RESULT = r ;:}
+        |  expr:e                                                                    {:RESULT = e;:}
+        ;
+
+if_else ::= IF LPAREN if_cond:i RPAREN stmt:fi ELSE stmt:fe                          {:RESULT = "(" + i + "?"+ fi + ":" + fe + ")" ;:}
+        ;
+
+if_cond ::= if_cond:i reverse:r                                                      {:RESULT = r + i  ;:}
+        |   prefix:p                                                                 {:RESULT = p;:}
+        ;
+
+prefix ::= if_cond:p PREFIX stmt:e                                                   {:RESULT = "(" + e + ")" +  ".startsWith(("+ p + "))";:}
+        |  stmt:e                                                                    {:RESULT = e;:}
+        ;
+
+reverse ::= REVERSE if_cond:i                                                        {:RESULT = "(new StringBuffer("+ i +").reverse()).toString()";:}
+          ;
+
+fun_body ::= stmt:c                                                                  {:RESULT = c;:}
+            ;
