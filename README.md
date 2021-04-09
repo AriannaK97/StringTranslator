@@ -1,4 +1,4 @@
-# JavaTranslator_mini
+# StringTranslator
 
 This is a part of a Compiler's class Homework (Spring 2020).
 
